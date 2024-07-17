@@ -3,6 +3,13 @@ from mido import MidiFile, MidiTrack, Message
 
 
 class SongData:
+    """
+    Class to store midi tracks, with methods to: 
+        get observations
+        get all tracks shortened to a maximum length
+        get all tracks padded to match the longest track
+        convert to and from MIDI data
+    """
 
     def __init__(self, midiMetaTrack, ticksPerBeat, tracks, durations, trackMetaInfo=None):
         self.midiMetaTrack = midiMetaTrack
@@ -18,17 +25,25 @@ class SongData:
         self.tracks = tracks
 
     def getAllPossibleObservations(self):
+        """
+        Get a dict of all possible note and duration combinations.
+        """
         observations = {}
         index = 0
         for note in range(0,128):
             for duration in range(len(self.durations)):
+                # note start
                 observations[(note, 1, duration, 0, 0)] = index
+                # note end
                 observations[(note, 0, duration, 0, 0)] = index+1
                 index += 2
 
         return observations
 
     def getShortenedTracks(self, cutoff=999999999):
+        """
+        cut all tracks to be the same length as the shortest track, and return as a numpy array.
+        """
         shortestTrack = cutoff
 
         for track in self.tracks:
@@ -46,6 +61,9 @@ class SongData:
         return newTracks
 
     def getPaddedTracks(self):
+        """
+        pad all tracks shorter than the longest track and return as a numpy array.
+        """
         longestTrack = 0
 
         for track in self.tracks:
@@ -103,22 +121,26 @@ def convertMidiToSongData(midiData):
                  int(12*beat):                23}   # two whole + quarter
 
     trackMetaData = []
+    # loop through tracks
     for track in midiData.tracks[1:]:
         noteSequence = []
         prev_msg = None
         offset = 0
         metaInfo = []
 
+        # loop through messages
         for msg in track:
             if msg.is_meta:
                 continue
 
+            # meta info
             if msg.type != 'note_on' and msg.type != 'note_off':
                 print(msg)
                 offset += msg.time
                 metaInfo.append(msg)
                 continue
 
+            # a note is already playing
             if prev_msg is not None:
                 vel = 1 if prev_msg.velocity > 0 else 0
                 if msg.time in durations:
@@ -133,6 +155,7 @@ def convertMidiToSongData(midiData):
                 prev_msg = None
                 continue
 
+            # start of a new note
             if msg.velocity > 0 and msg.type == "note_on":
                 if offset > 0:
                     msg.time += offset
@@ -149,7 +172,7 @@ def convertMidiToSongData(midiData):
 
 def convertSongDataToMidi(songData, saveToFile=None):
     """
-    Converts the given SongData to MidiFile
+    Converts the given SongData to MidiFile object.
 
     :param songData:
     :return: MidiFile
