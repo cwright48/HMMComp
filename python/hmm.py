@@ -1,6 +1,9 @@
 import numpy as np
 
 class HMM:
+    """
+    HMM class used to compose songs.
+    """
 
     def __init__(self, numObsVars=0, numHiddenStates=0, numPossibleObs=0, filePath=None, obsDictFilePath=None):
         self.a = None               # transition prob matrix, M x M
@@ -86,7 +89,9 @@ class HMM:
 
 
     def generateSequence(self, length):
-
+        """
+        Generate a sequence of the given length
+        """
         # sample initial state
         curState = np.random.choice(range(self.numHiddenStates), p=self.pi)
         tracks = np.empty((length, self.numObservationVars, 5), dtype=int)
@@ -100,7 +105,6 @@ class HMM:
             tracks[0, x] = self.obsDict[output]
         prevState = curState
 
-        print("here")
         # sample from transition/emission matrix for each successive state/emission
         for t in range(1, length):
             # sample from transition for new state
@@ -116,6 +120,9 @@ class HMM:
         return tracks.reshape((self.numObservationVars, length,  5))
 
     def calcAlphas(self, obSequence):
+        """
+        calculates alphas given the observation sequence.
+        """
         alphas = np.zeros((self.numHiddenStates, self.numObservationVars, self.seqLength))
 
         # initialize first
@@ -135,6 +142,9 @@ class HMM:
 
 
     def calcBetas(self, obSequence):
+        """
+        calculates betas given the observation sequence.
+        """
         # beta_t(i) = P[O_t+1:T | Z_t, Theta] = sum_Z_t+1 ( beta_t+1(j) * P(Z_t+1 = j | Z_t) * P(O_t+1 | Z_t+1) )
         # beta_t(i) = P[O_t+1:T | Z_t, Theta] = sum_Z_t+1 ( beta_t+1(j) * a[i,j] * b[j](O_t+1) * P(O_t+1 | Z_t+1) )
         betas = np.zeros((self.numHiddenStates, self.numObservationVars, self.seqLength))
